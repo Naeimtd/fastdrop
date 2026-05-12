@@ -40,15 +40,24 @@ jobs:
     - name: Cache Buildozer global directory
       uses: actions/cache@v4
       with:
-        path: ~/.buildozer
-        key: buildozer-${{ hashFiles('buildozer.spec') }}
+        path: |
+          ~/.buildozer
+          ~/.gradle
+        key: buildozer-${{ hashFiles('buildozer.spec') }}-v2
 
     - name: Build APK
       run: |
         export PATH=$PATH:~/.local/bin/
+        yes | buildozer android debug || true
+        # Accept all SDK licenses if SDK exists
+        if [ -d ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin ]; then
+          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        fi
+        # Build again after license acceptance
         buildozer android debug
 
     - name: Upload APK
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: FastDrop-APK
